@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Planner Ucznia</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #74ebd5, #9face6);
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+input, select {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 80%;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: #6c63ff;
+    color: white;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #574fd6;
+}
+
+.filter {
+    background: #888;
+}
+
+.filter:hover {
+    background: #666;
+}
+
+.task {
+    border: 1px solid #ddd;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 6px;
+    background: #f9f9ff;
+    text-align: left;
+}
+
+.task b {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.done {
+    text-decoration: line-through;
+    color: gray;
+    opacity: 0.7;
+}
+
+.task button {
+    margin-top: 5px;
+    margin-right: 5px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+</style>
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Planner zadań</h2>
+
+    <input type="text" id="taskInput" placeholder="Wpisz zadanie">
+    
+   <div class="priority-box">
+    <label>Priorytet:</label>
+    <select id="priority">
+        <option value="Niski">Niski</option>
+        <option value="Średni">Średni</option>
+        <option value="Wysoki">Wysoki</option>
+    </select>
+</div>
+
+    <button id="addBtn">Dodaj</button>
+
+    <br>
+
+    <button class="filter" data-type="all">Wszystkie</button>
+    <button class="filter" data-type="done">Zrobione</button>
+    <button class="filter" data-type="todo">Do zrobienia</button>
+
+    <div id="list"></div>
+</div>
+
+<script>
+
+class Planner {
+    constructor() {
+        this.tasks = [];
+        this.filter = "all";
+
+        this.load();
+        this.init();
+    }
+
+    init() {
+        document.getElementById("addBtn")
+            .addEventListener("click", () => this.addTask());
+
+        document.getElementById("taskInput")
+            .addEventListener("keypress", (e) => {
+                if (e.key === "Enter") this.addTask();
+            });
+
+        document.querySelectorAll(".filter")
+            .forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    this.filter = e.target.dataset.type;
+                    this.render();
+                });
+            });
+
+        this.render();
+    }
+
+    addTask() {
+        let text = document.getElementById("taskInput").value;
+
+        if (text === "") {
+            alert("Wpisz zadanie");
+            return;
+        }
+
+        let task = {
+            id: Date.now(),
+            text: text,
+            done: false,
+            priority: document.getElementById("priority").value
+        };
+
+        this.tasks.push(task);
+
+        document.getElementById("taskInput").value = "";
+
+        this.save();
+        this.render();
+    }
+
+    toggleTask(id) {
+        let task = this.tasks.find(t => t.id === id);
+        task.done = !task.done;
+
+        this.save();
+        this.render();
+    }
+
+    deleteTask(id) {
+        this.tasks = this.tasks.filter(t => t.id !== id);
+
+        this.save();
+        this.render();
+    }
+
+    getFiltered() {
+        return this.tasks.filter(t => {
+            if (this.filter === "all") return true;
+            if (this.filter === "done") return t.done;
+            if (this.filter === "todo") return !t.done;
+        });
+    }
+
+    render() {
+        let list = document.getElementById("list");
+        list.innerHTML = "";
+
+        let data = this.getFiltered();
+
+        data.forEach(task => {
+            let div = document.createElement("div");
+            div.className = "task";
+
+            if (task.done) div.classList.add("done");
+
+            div.innerHTML = `
+                <b>${task.text}</b> (${task.priority})
+                <br>
+                <button class="doneBtn">✔</button>
+                <button class="delBtn">X</button>
+            `;
+
+            div.querySelector(".doneBtn")
+                .addEventListener("click", () => this.toggleTask(task.id));
+
+            div.querySelector(".delBtn")
+                .addEventListener("click", () => this.deleteTask(task.id));
+
+            list.appendChild(div);
+        });
+    }
+
+    save() {
+        localStorage.setItem("planner", JSON.stringify(this.tasks));
+    }
+
+    load() {
+        let data = localStorage.getItem("planner");
+        this.tasks = data ? JSON.parse(data) : [];
+    }
+}
+
+new Planner();
+
+</script>
+
+</body>
+</html>
